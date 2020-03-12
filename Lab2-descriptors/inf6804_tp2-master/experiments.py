@@ -15,6 +15,8 @@ def get_recall(disparity, gt, max_disp):
     :return: rate of correct predictions.
     """
     gt = np.float32(cv2.imread(gt, cv2.IMREAD_GRAYSCALE))
+    if gt.shape[0] > 800:
+        gt = cv2.resize(gt, (gt.shape[1]//2, gt.shape[0]//2))
     gt = np.int16(gt / 255.0 * float(max_disp))
     disparity = np.int16(np.float32(disparity) / 255.0 * float(max_disp))
     correct = np.count_nonzero(np.abs(disparity - gt) <= 3)
@@ -34,16 +36,21 @@ def get_recall(disparity, gt, max_disp):
     return float(correct) / gt.size
 
 
-def experiments(left='cones/im2.png', right='cones/im6.png', gt_name='cones/disp2.png'):
+def experiments(descriptor, left, right, gt_name, descriptor_size):
+    
+    print(left)
+    print(right)
+    print(gt_name)
 
-    descriptor = 'brief'
     if descriptor == 'brief':
+        print('Running BRIEF..\n')
         distance = distances.hamming_distance
     else:
+        print('Running HOG..\n')
         distance = distances.l2_distance
-    descriptor_size = 7
-    num_elements = 128
+        
     num_orientation = 8
+    num_elements = 128
     max_disp = 64
 
     disparity_map = sgm.sgm(left, right, descriptor, distance, descriptor_size, num_elements, num_orientation, max_disp)
@@ -51,26 +58,7 @@ def experiments(left='cones/im2.png', right='cones/im6.png', gt_name='cones/disp
 
     print('\nEvaluating left disparity map...')
     recall = get_recall(disparity_map, gt_name, max_disp)
-    print('\tRecall = {:.2f}%'.format(recall * 100.0))
-
-def experiments_rotated(angle, left='cones/im2.png', right='cones/im6.png', gt_name='cones/disp2.png'):
-
-    descriptor = 'brief'
-    if descriptor == 'brief':
-        distance = distances.hamming_distance
-    else:
-        distance = distances.l2_distance
-    descriptor_size = 7
-    num_elements = 128
-    num_orientation = 8
-    max_disp = 64
-
-    disparity_map = sgm.sgm_rotated(left, right, descriptor, distance, descriptor_size, num_elements, num_orientation, max_disp, angle)
-    cv2.imwrite('left_disp_map.png', disparity_map)
-
-    print('\nEvaluating left disparity map...')
-    recall = get_recall(disparity_map, gt_name, max_disp)
-    print('\tRecall = {:.2f}%'.format(recall * 100.0))
+    print('\tRecall = {:.2f}%\n'.format(recall * 100.0))
 
 if __name__ == '__main__':
     experiments()

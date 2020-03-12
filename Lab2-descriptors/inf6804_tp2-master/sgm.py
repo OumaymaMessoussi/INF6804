@@ -70,6 +70,12 @@ def load_images(left_name, right_name, parameters):
     left = cv2.GaussianBlur(left, parameters.bsize, 0, 0)
     right = cv2.imread(right_name, 0)
     right = cv2.GaussianBlur(right, parameters.bsize, 0, 0)
+    
+    if left.shape[0] > 800:
+        left = cv2.resize(left, (left.shape[1]//2, left.shape[0]//2))
+    if right.shape[0] > 800:
+        right = cv2.resize(right, (right.shape[1]//2, right.shape[0]//2))
+        
     return left, right
 
 
@@ -283,59 +289,6 @@ def sgm(left, right, descriptor, distance, descriptor_size, num_elements, num_or
     plt.imshow(left, cmap='gray')
 
     y = fig.add_subplot(1, 2, 2)
-    y.set_title('right')
-    plt.imshow(right, cmap='gray')
-    
-    plt.show()
-
-    if descriptor == 'hog':
-        left_descriptor, right_descriptor = desc.apply_hog(left, right, descriptor_size, num_orientations)
-    elif descriptor == 'brief':
-        left_descriptor, right_descriptor = desc.apply_brief(left, right, descriptor_size, num_elements)
-    else:
-        print(f'Invalid descriptor name, choices are "brief", "hog".')
-        exit(-1)
-
-    print('\nStarting cost computation...')
-    cost_volume = compute_costs(left_descriptor, right_descriptor, descriptor_size, distance, max_disp)
-
-    print('\nStarting aggregation computation...')
-    aggregation_volume = aggregate_costs(cost_volume, parameters, paths)
-
-    print('\nSelecting best disparities...')
-    return np.uint8(normalize(select_disparity(aggregation_volume), parameters))
-    
-def sgm_rotated(left, right, descriptor, distance, descriptor_size, num_elements, num_orientations, max_disp, angle):
-    """
-    computes the disparity map for the left image, with a given descriptor.
-    :param left: path to left image.
-    :param right: path to right image.
-    :param descriptor: name of the chosen descriptor.
-    :param distance: distance function.
-    :param descriptor_size: size of the descriptor.
-    :param num_elements: length of the BRIEF vector.
-    :param num_orientations: length of the HOG vector.
-    :param max_disp: maximum disparity of the dataset.
-    :return: (H x W) disparity map for the left image.
-    """
-    # you probably need to change parameters P1 and P2 depending on the method.
-    parameters = Parameters()
-    paths = Paths()
-
-    left, right = load_images(left, right, parameters)
-    
-    print('Image size: '+str(left.shape))
-    
-    print('Rotating right image..')
-    right = imutils.rotate(right, angle)
-    
-    fig = plt.figure(figsize=(200, 200))
-            
-    x = fig.add_subplot(1,2, 1)
-    x.set_title('left')
-    plt.imshow(left, cmap='gray')
-
-    y = fig.add_subplot(1,2, 2)
     y.set_title('right')
     plt.imshow(right, cmap='gray')
     

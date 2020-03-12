@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import cv2
 
 
-def apply_hog(left, right, descriptor_size, num_orientations):
+def apply_hog(left_im, right_im, descriptor_size, num_orientations):
     """
     computes HOG descriptor on both images.
     :param left: left image.
@@ -18,6 +18,33 @@ def apply_hog(left, right, descriptor_size, num_orientations):
     :return: (H x W x M) array, H = height, W = width and M = num_orientations, of type np.float32.
     """
     # TODO: apply HOG descriptor on left and right images.
+    
+    i_min = descriptor_size//2
+    
+    left = np.zeros((left_im.shape[0], left_im.shape[1], num_orientations), dtype=np.float32)
+    right = np.zeros((right_im.shape[0], right_im.shape[1], num_orientations), dtype=np.float32)
+    
+    # Computing feature descriptors for the left image
+    
+    for i in range(i_min, left_im.shape[0]-i_min):
+        for j in range(i_min, left_im.shape[1]-i_min):
+            
+            ROI = left_im[(i-i_min):(i+i_min+1), (j-i_min):(j+i_min+1)]
+            left[i][j] = hog(ROI, num_orientations, pixels_per_cell=(descriptor_size, descriptor_size), 
+                             cells_per_block=(1, 1), feature_vector=True)
+
+    # Computing feature descriptors for the right image
+
+    for i in range(i_min, right_im.shape[0]-i_min):
+        for j in range(i_min, right_im.shape[1]-i_min):
+            
+            ROI = right_im[(i-i_min):(i+i_min+1), (j-i_min):(j+i_min+1)]
+            right[i][j] = hog(ROI, num_orientations, pixels_per_cell=(descriptor_size, descriptor_size), 
+                              cells_per_block=(1, 1), feature_vector=True)
+                 
+    print(left.shape)
+    
+    return left, right
 
 
 def apply_brief(imgL, imgR, descriptor_size, num_elements):
@@ -32,7 +59,7 @@ def apply_brief(imgL, imgR, descriptor_size, num_elements):
     # TODO: apply BRIEF descriptor on both images. You will have to convert the BRIEF feature vector to a int64.
 
     # Image pixel indices to use as "key points"
-
+    
     indicesL = np.zeros(((imgL.shape[0])*(imgL.shape[1]), 2), dtype=np.int64)
     indicesR = np.zeros(((imgR.shape[0])*(imgR.shape[1]), 2), dtype=np.int64)
     
@@ -46,7 +73,7 @@ def apply_brief(imgL, imgR, descriptor_size, num_elements):
         for j in range(0, imgR.shape[1]):
             indicesR[k,0], indicesR[k,1] = i, j
             k += 1
-
+            
     # BRIEF descriptor
 
     extractor = BRIEF(descriptor_size=num_elements, patch_size=descriptor_size)
@@ -69,8 +96,8 @@ def apply_brief(imgL, imgR, descriptor_size, num_elements):
     
     # Reshaping the descriptor and adding padding to match the image shape
     
-    descriptorL = descL.reshape((imgL.shape[0]-5, imgL.shape[1]-5))
-    descriptorR = descR.reshape((imgR.shape[0]-5, imgR.shape[1]-5))
+    descriptorL = descL.reshape((imgL.shape[0]-(descriptor_size-2), imgL.shape[1]-(descriptor_size-2)))
+    descriptorR = descR.reshape((imgR.shape[0]-(descriptor_size-2), imgR.shape[1]-(descriptor_size-2)))
     
     delta_w = imgL.shape[1] - descriptorL.shape[1]
     delta_h = imgL.shape[0] - descriptorL.shape[0]
