@@ -14,8 +14,8 @@ def bb_iou(box1, box2):
     y_top = max(box1[1], box2[1])
     x_right = min(box1[0] + box1[2], box2[0] + box2[2])
     y_bottom = min(box1[1] + box1[3], box2[1] + box2[3])
-    # object is lost, no box
-    if x_right == 0 or y_bottom == 0:
+    # object is lost, no box or no iou between boxes
+    if x_right == 0 or y_bottom == 0 or x_right < x_left or y_bottom < y_top:
         return 0.0
     overlap_area = (x_right - x_left) * (y_bottom - y_top)  # intersection
     bb1_area = box1[2] * box1[3]
@@ -105,11 +105,11 @@ def test_ground_truth(folder, gt):
         cv2.waitKey(delay=24)
 
 
-def track(folder, gt):
+def track(folder, first_box):
     """
     code for your tracker.
     :param folder: path to the folder containing the frames of the video sequence.
-    :param gt: box location for each frame (output of read_ground_truth).
+    :param first_box: box location of the object in the first frame, used to initialize the tracker.
     :return: dict with an entry for each frame being a tuple (x, y, width, height)
     """
     # TODO: code for tracking an object in a given sequence.
@@ -120,7 +120,8 @@ def main():
     path_gt = 'dataset/groundtruth.txt'
     gt = read_ground_truth(path_gt)
     # test_ground_truth(frames_folder, gt)
-    predictions = track(frames_folder, gt)
+    first_box = init_tracker(gt)
+    predictions = track(frames_folder, first_box)
     accuracy, robustness = evaluate(predictions, gt)
     print(f'accuracy = {accuracy}, robustness = {robustness}')
 
